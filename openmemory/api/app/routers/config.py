@@ -49,9 +49,48 @@ def get_default_configuration():
         },
         "mem0": {
             "llm": {
+                "provider": "azure_openai",
+                "config": {
+                    "model": "gpt-4.1-nano",
+                    "temperature": 0.1,
+                    "max_tokens": 2000,
+                    "api_key": "env:OPENAI_API_KEY",
+                    "azure_kwargs": {
+                        "azure_deployment": "gpt-4.1-nano",
+                        "api_version": "2024-10-21",
+                        "azure_endpoint": "https://oai-drasys.openai.azure.com",
+                        "api_key": "env:LLM_AZURE_OPENAI_API_KEY"
+                    }
+                }
+            },
+            "embedder": {
+                "provider": "azure_openai",
+                "config": {
+                    "model": "text-embedding-3-small",
+                    "api_key": "env:OPENAI_API_KEY",
+                    "azure_kwargs": {
+                        "azure_deployment": "text-embedding-3-small",
+                        "api_version": "2024-10-21",
+                        "azure_endpoint": "https://oai-drasys.openai.azure.com",
+                        "api_key": "env:LLM_AZURE_OPENAI_API_KEY"
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    '''
+    return {
+        "openmemory": {
+            "custom_instructions": None
+        },
+        "mem0": {
+            "llm": {
                 "provider": "openai",
                 "config": {
-                    "model": "gpt-4o-mini",
+                    "model": "gpt-4.1-nano",
                     "temperature": 0.1,
                     "max_tokens": 2000,
                     "api_key": "env:OPENAI_API_KEY"
@@ -66,6 +105,7 @@ def get_default_configuration():
             }
         }
     }
+    '''
 
 def get_config_from_db(db: Session, key: str = "main"):
     """Get configuration from database."""
@@ -140,10 +180,10 @@ async def update_configuration(config: ConfigSchema, db: Session = Depends(get_d
     if config.openmemory is not None:
         if "openmemory" not in updated_config:
             updated_config["openmemory"] = {}
-        updated_config["openmemory"].update(config.openmemory.dict(exclude_none=True))
+        updated_config["openmemory"].update(config.openmemory.model_dump(exclude_none=True))
     
     # Update mem0 settings
-    updated_config["mem0"] = config.mem0.dict(exclude_none=True)
+    updated_config["mem0"] = config.mem0.model_dump(exclude_none=True)
     
     # Save the configuration to database
     save_config_to_db(db, updated_config)

@@ -97,7 +97,7 @@ export function FormView({ settings, onChange }: FormViewProps) {
   const LLM_PROVIDERS = [
     "OpenAI",
     "Anthropic",
-    "Azure OpenAI",
+    "Azure_OpenAI",
     "Ollama",
     "Together",
     "Groq",
@@ -114,7 +114,7 @@ export function FormView({ settings, onChange }: FormViewProps) {
 
   const EMBEDDER_PROVIDERS = [
     "OpenAI",
-    "Azure OpenAI",
+    "Azure_OpenAI",
     "Ollama",
     "Hugging Face",
     "Vertexai",
