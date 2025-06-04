@@ -17,11 +17,15 @@ Key features:
 
 import logging
 import json
-from mcp.server.fastmcp import FastMCP
-from mcp.server.sse import SseServerTransport
+from fastmcp import FastMCP
+
 from app.utils.memory import get_memory_client
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response, HTTPException
+from starlette.types import Scope, Receive, Send
+from starlette.responses import JSONResponse
 from fastapi.routing import APIRouter
+import logging
+import json
 import contextvars
 import os
 from dotenv import load_dotenv
@@ -37,7 +41,7 @@ from qdrant_client import models as qdrant_models
 load_dotenv()
 
 # Initialize MCP
-mcp = FastMCP("mem0-mcp-server")
+mcp = FastMCP("openmemory")
 
 # Don't initialize memory client at import time - do it lazily when needed
 def get_memory_client_safe():
@@ -52,17 +56,13 @@ def get_memory_client_safe():
 user_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("user_id")
 client_name_var: contextvars.ContextVar[str] = contextvars.ContextVar("client_name")
 
-# Create a router for MCP endpoints
-mcp_router = APIRouter(prefix="/mcp")
+logger = logging.getLogger(__name__)
 
-# Initialize SSE transport
-sse = SseServerTransport("/mcp/messages/")
 
 @mcp.tool(description="Add a new memory. This method is called everytime the user informs anything about themselves, their preferences, or anything that has any relevant information which can be useful in the future conversation. This can also be called when the user asks you to remember something.")
 async def add_memories(text: str) -> str:
     uid = user_id_var.get(None)
     client_name = client_name_var.get(None)
-
     if not uid:
         return "Error: user_id not provided"
     if not client_name:
@@ -374,41 +374,85 @@ async def delete_all_memories() -> str:
         return f"Error deleting memories: {e}"
 
 
-@mcp_router.get("/{client_name}/sse/{user_id}")
-async def handle_sse(request: Request):
-    """Handle SSE connections for a specific user and client"""
-    # Extract user_id and client_name from path parameters
-    uid = request.path_params.get("user_id")
-    user_token = user_id_var.set(uid or "")
-    client_name = request.path_params.get("client_name")
-    client_token = client_name_var.set(client_name or "")
+from fastapi import Request
+from starlette.responses import Response
 
+async def mcp_streamable_http(request: Request):
+    body = None  # Prevent UnboundLocalError
+    headers = None  # Prevent UnboundLocalError
     try:
-        # Handle SSE connection
-        async with sse.connect_sse(
-            request.scope,
-            request.receive,
-            request._send,
-        ) as (read_stream, write_stream):
-            await mcp._mcp_server.run(
-                read_stream,
-                write_stream,
-                mcp._mcp_server.create_initialization_options(),
-            )
+        data = await request.json()
+        client_name = data.get("client_name")
+        user_id = data.get("user_id", "")
+    except Exception:
+        client_name = None
+        user_id = None
+    # FastMCP는 /mcp 경로만 인식하므로 scope["path"]를 무조건 '/mcp'로 고정
+    scope = dict(request.scope)
+    scope["path"] = "/mcp/"
+
+    # --- 인증 로직 기존 handle_mcp_asgi에서 복사 ---
+    import datetime
+    from app.database import get_db
+    from app.models import User, UserToken
+    from app.mcp_server import user_id_var, client_name_var
+    db = next(get_db())
+    try:
+        # Bearer 토큰 추출
+        auth_header = request.headers.get("authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            response = Response(content="Missing Bearer token", status_code=401)
+            return response
+        bearer_token = auth_header.split(" ", 1)[1]
+        user = db.query(User).filter(User.user_id == user_id).first()
+        if not user:
+            response = Response(content="User not found", status_code=401)
+            return response
+        token_row = db.query(UserToken).filter(UserToken.user_id == user.id, UserToken.token == bearer_token).first()
+        if not token_row:
+            response = Response(content="Invalid API key", status_code=401)
+            return response
+        # 토큰 사용 기록
+        token_row.last_used_at = datetime.datetime.now(datetime.timezone.utc)
+        db.commit()
     finally:
-        # Clean up context variables
-        user_id_var.reset(user_token)
-        client_name_var.reset(client_token)
-
-
-@mcp_router.post("/messages/")
-async def handle_get_message(request: Request):
-    return await handle_post_message(request)
-
-
-@mcp_router.post("/{client_name}/sse/{user_id}/messages/")
-async def handle_post_message(request: Request):
-    return await handle_post_message(request)
+        db.close()
+    # --- 인증 끝 ---
+    # Context 변수 세팅
+    user_token_ctx = user_id_var.set(user_id)
+    client_token_ctx = client_name_var.set(client_name)
+    user_token_ctx = user_id_var.set(user_id)
+    try:
+        asgi_app = mcp.streamable_http_app()
+        send_queue = []
+        async def send(message):
+            send_queue.append(message)
+        logger.info(f"[DEBUG] FastMCP에 넘기는 path: {scope['path']}, method: {scope.get('method')}")
+        await asgi_app(scope, request.receive, send)
+        status = 200
+        headers = {}
+        body = b""
+        for message in send_queue:
+            if message["type"] == "http.response.start":
+                status = message["status"]
+                headers = {k.decode(): v.decode() for k, v in message["headers"]}
+            if message["type"] == "http.response.body":
+                body = message.get("body", b"")
+        if not body or body.strip() in (b"", b"null"):
+            body = b"{}"
+        headers["content-type"] = "application/json"
+        logger.info(f"[DEBUG] MCP streamable_http_app raw body: {body}, headers: {headers}")
+        return Response(content=body, status_code=status, headers=headers)
+    except Exception as e:
+        logger.exception(f"[DEBUG] Exception in mcp_streamable_http: {e}")
+        raise
+    finally:
+        user_id_var.reset(user_token_ctx)
+        client_name_var.reset(client_token_ctx)
+        if body is not None and headers is not None:
+            logger.info(f"[DEBUG] (finally) MCP streamable_http_app raw body: {body}, headers: {headers}")
+        else:
+            logger.info(f"[DEBUG] (finally) MCP streamable_http_app: body or headers is None (body={body}, headers={headers})")
 
 async def handle_post_message(request: Request):
     """Handle POST messages for SSE"""
@@ -433,9 +477,4 @@ async def handle_post_message(request: Request):
         # Clean up context variable
         # client_name_var.reset(client_token)
 
-def setup_mcp_server(app: FastAPI):
-    """Setup MCP server with the FastAPI application"""
-    mcp._mcp_server.name = f"mem0-mcp-server"
-
-    # Include MCP router in the FastAPI app
-    app.include_router(mcp_router)
+# setup_mcp_server는 더 이상 필요하지 않으므로 제거합니다.
