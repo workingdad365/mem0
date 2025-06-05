@@ -62,87 +62,76 @@ http://localhost:6333/dashboard
 
 ---
 
-# OpenMemory MCP 인증/토큰 발급 사용 예시
+# OpenMemory MCP JWT 인증 및 토큰 발급 사용법
 
-OpenMemory MCP 서버에서 **관리자 토큰**과 **일반 사용자 토큰(API 키)**을 생성하고 사용하는 방법을 안내합니다.
-
----
-
-## 1. 관리자 토큰 생성 및 사용
-
-관리자 토큰은 API 키 관리(생성/조회/폐기) 등 관리자 권한이 필요한 작업에 사용됩니다.
-
-### 생성 방법
-```bash
-cd /home/drasys/project/mem0/openmemory/api
-python create_admin_token.py <user_id> --description "관리자 토큰 설명" --expires-in-days 365
-```
-- `<user_id>`: 관리자 권한을 부여할 사용자 ID(예: `admin`)
-- `--description`: 토큰 용도/설명
-- `--expires-in-days`: 만료일(일 단위, 0이면 무기한)
-
-#### 예시
-```bash
-python create_admin_token.py admin --description "운영자 전용 마스터키" --expires-in-days 365
-```
-
-### 사용 예시 (API 키 관리)
-
-- **API 키 생성**
-```http
-POST /api-keys/?admin_token=<관리자_토큰>
-{
-  "user_id": "user1",
-  "description": "모바일앱용 키",
-  "expires_in_days": 30
-}
-```
-- **API 키 목록 조회**
-```http
-GET /api-keys/?user_id=user1&admin_token=<관리자_토큰>
-```
-- **API 키 폐기**
-```http
-DELETE /api-keys/<token_id>?admin_token=<관리자_토큰>
-```
+OpenMemory MCP 서버는 JWT (JSON Web Token) 기반의 Bearer 토큰 인증을 사용합니다. 이 문서는 JWT 토큰을 생성하고 MCP 세션 연결 시 사용하는 방법을 안내합니다.
 
 ---
 
-## 2. 일반 사용자 토큰(API 키) 생성 및 사용
+## JWT (JSON Web Token) 기반 인증 개요
 
-사용자 토큰은 MCP 클라이언트가 초기 연결(인증) 시 사용합니다.
+-   **상태 비저장(Stateless)**: 서버는 토큰 자체를 저장하지 않고, 각 요청에 포함된 토큰을 실시간으로 검증합니다.
+-   **RSA 키 페어 사용**:
+    -   `api/private_key.pem` (개인키): JWT 토큰 서명에 사용됩니다. **절대로 외부에 노출되어서는 안 됩니다.**
+    -   `api/public_key.pem` (공개키): 서버가 JWT 토큰의 서명을 검증하는 데 사용됩니다.
+-   **토큰 내용**: 토큰에는 `user_id`, `client_name`, 만료 시간 (`exp`), 발급자 (`iss`), 대상 (`aud`) 등의 정보(클레임)가 포함됩니다.
 
-### 생성 방법
+---
+
+## 1. JWT 토큰 생성 방법
+
+모든 JWT 토큰은 `openmemory/api` 디렉토리에 있는 `create_token.py` 스크립트를 사용하여 생성합니다.
+
+**명령어 형식:**
+
 ```bash
 cd /home/drasys/project/mem0/openmemory/api
-python create_user_token.py <user_id> --description "토큰 설명" --expires-in-days 30
-```
-- `<user_id>`: 토큰을 발급할 사용자 ID(예: `user1`)
-- `--description`: 토큰 용도/설명
-- `--expires-in-days`: 만료일(일 단위, 0이면 무기한)
-
-#### 예시
-```bash
-python create_user_token.py user1 --description "모바일앱 전용 키" --expires-in-days 60
+python create_token.py --user-id YOUR_USER_ID --client-name YOUR_CLIENT_NAME
 ```
 
-### 사용 예시 (MCP 최초 세션 연결)
+-   `--user-id YOUR_USER_ID`: 토큰을 발급할 사용자의 ID를 지정합니다. (예: `drasys`)
+-   `--client-name YOUR_CLIENT_NAME`: 토큰을 사용할 클라이언트의 이름을 지정합니다. (예: `openmemory_mcp_inspector`)
+-   `--admin` (선택 사항): 관리자 권한을 가진 토큰을 생성하려면 이 플래그를 추가합니다.
+    ```bash
+    python create_token.py --user-id YOUR_ADMIN_ID --client-name YOUR_ADMIN_CLIENT_NAME --admin
+    ```
+
+**스크립트 실행 시 동작:**
+
+1.  `api/private_key.pem` 및 `api/public_key.pem` 파일이 존재하지 않으면, 스크립트가 새로운 RSA 키 페어를 생성하여 이 두 파일에 저장합니다.
+2.  이미 키 파일들이 존재하면, 해당 키들을 사용하여 토큰을 생성합니다.
+3.  생성된 JWT 토큰이 터미널에 출력됩니다. 이 토큰을 복사하여 API 요청 시 사용합니다.
+
+**중요:**
+-   `private_key.pem` 파일은 Git에 의해 추적되지 않도록 `.gitignore`에 등록되어 있습니다.
+-   최초 실행 시 또는 키 페어를 재생성하고 싶을 때 기존 `api/private_key.pem`과 `api/public_key.pem` 파일을 삭제 후 스크립트를 실행하면 새 키 페어가 생성됩니다.
+
+---
+
+## 2. MCP 세션 연결 시 인증
+
+MCP 클라이언트가 서버에 세션을 맺거나 API를 호출할 때, 생성된 JWT 토큰을 HTTP `Authorization` 헤더에 `Bearer` 스킴으로 전달해야 합니다.
+
+**사용 예시 (MCP 세션 연결 또는 API 호출):**
 
 ```http
-POST /mcp/openmemory/sse/user1 HTTP/1.1
+POST /mcp/openmemory/mcp/YOUR_USER_ID HTTP/1.1
 Host: localhost:8765
-X-API-Key: <생성된_토큰>
+Authorization: Bearer <생성된_JWT_토큰>
 Content-Type: application/json
 
-{
-  // MCP 초기화용 JSON-RPC payload
-}
+{ /* MCP 초기화용 JSON-RPC payload 또는 API 요청 본문 (필요시) */ }
 ```
-- 인증 토큰은 반드시 헤더(`X-API-Key`)로 전달해야 합니다.
+
+-   `<생성된_JWT_토큰>` 부분에 `create_token.py` 실행 시 출력된 실제 토큰 값을 넣습니다.
+-   `YOUR_USER_ID`는 토큰에 포함된 사용자 ID와 일치해야 합니다.
+-   인증 실패 (토큰 누락, 유효하지 않은 서명, 만료된 토큰 등) 시 서버는 HTTP 401 Unauthorized 에러를 반환합니다.
 
 ---
 
 ## 참고
-- 모든 토큰 생성 시 `--name` 대신 `--description`을 사용하세요. (`--name`도 호환)
-- 관리자 토큰은 반드시 안전하게 보관하세요.
-- 기존 DB를 삭제하고 새로 만들 경우, 마이그레이션 없이 바로 사용 가능합니다.
+
+-   JWT 토큰은 만료 시간(`exp` 클레임)을 가집니다. `create_token.py` 스크립트에서 기본 만료 시간은 24시간으로 설정되어 있으며, 필요시 스크립트 내 (`EXPIRATION_TIME_SECONDS` 변수)에서 수정할 수 있습니다.
+-   `api/private_key.pem` 파일은 매우 중요하므로 안전하게 보관해야 합니다. 이 파일이 유출되면 누구나 유효한 토큰을 생성할 수 있게 됩니다.
+-   서버의 `api/public_key.pem` 파일이 변경되거나 접근 불가능하게 되면, 이전에 해당 공개키와 쌍을 이루는 개인키로 서명된 모든 JWT 토큰은 더 이상 유효하지 않게 됩니다.
+-   관리자 토큰은 강력한 권한을 가지므로 특히 주의해서 관리해야 합니다.
