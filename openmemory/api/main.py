@@ -31,6 +31,7 @@ app.mount("/mcp/", http_app_from_mcp)
 # Removed mcp_passthrough and mcp_slash_redirect as they conflict with the mount
 # and are no longer needed with the simplified mounting strategy.
 
+'''
 # ScopeDebugMiddleware definition
 scope_logger = logging.getLogger("scope_debug_middleware")
 scope_logger.setLevel(logging.DEBUG)
@@ -64,7 +65,7 @@ class ScopeDebugMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         #scope_logger.info(f"SCOPE_DEBUG_MIDDLEWARE_EXIT: Path {request.url.path}") # New log
         return response
-            
+'''            
 
 
 # Define ISSUER URL for AuthMiddleware
@@ -81,7 +82,7 @@ app.add_middleware(
 )
 
 # Add ScopeDebugMiddleware *after* AuthMiddleware so it can log 'auth_claims'
-app.add_middleware(ScopeDebugMiddleware)
+#app.add_middleware(ScopeDebugMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

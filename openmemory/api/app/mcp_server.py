@@ -130,57 +130,15 @@ async def add_memories(ctx: Context, text: str) -> dict[str, Any]:
     auth_claims = None
     auth_source = None
     
-    # 1. 기본 방법: ctx.auth_claims 사용
     try:
-        auth_claims = ctx.auth_claims
-        if auth_claims:
-            auth_source = "ctx.auth_claims"
-            logger.info(f"[MCP DEBUG] Successfully retrieved auth_claims via ctx.auth_claims: {auth_claims}")
-    except Exception as e_claims:
-        logger.debug(f"[MCP DEBUG] Could not access ctx.auth_claims: {e_claims}")
-    
-    # 2. 대체 방법: request.scope['user'].access_token.claims 사용
-    if not auth_claims:
-        try:
-            request = ctx.get_http_request()
-            if request and 'user' in request.scope and hasattr(request.scope['user'], 'access_token') and hasattr(request.scope['user'].access_token, 'claims'):
-                auth_claims = request.scope['user'].access_token.claims
-                auth_source = "request.scope['user'].access_token.claims"
-                logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['user'].access_token.claims: {auth_claims}")
-        except Exception as e:
-            logger.debug(f"[MCP DEBUG] Could not access request.scope['user'].access_token.claims: {e}")
-    
-    # 3. 대체 방법: request.scope['auth_claims'] 사용
-    if not auth_claims:
-        try:
-            request = ctx.get_http_request()
-            if request and 'auth_claims' in request.scope:
-                auth_claims = request.scope['auth_claims']
-                auth_source = "request.scope['auth_claims']"
-                logger.info(f"[MCP DEBUG] Found auth_claims in request.scope: {auth_claims}")
-        except Exception as e:
-            logger.debug(f"[MCP DEBUG] Could not access request.scope['auth_claims']: {e}")
-    
-    # 4. 대체 방법: ctx.auth.claims 사용
-    if not auth_claims:
-        try:
-            if hasattr(ctx, 'auth') and hasattr(ctx.auth, 'claims'):
-                auth_claims = ctx.auth.claims
-                auth_source = "ctx.auth.claims"
-                logger.info(f"[MCP DEBUG] Found auth_claims via ctx.auth.claims: {auth_claims}")
-        except Exception as e:
-            logger.debug(f"[MCP DEBUG] Could not access ctx.auth.claims: {e}")
-    
-    # 5. 대체 방법: scope['auth']['claims'] 사용
-    if not auth_claims:
-        try:
-            request = ctx.get_http_request()
-            if request and 'auth' in request.scope and 'claims' in request.scope['auth']:
-                auth_claims = request.scope['auth']['claims']
-                auth_source = "request.scope['auth']['claims']"
-                logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['auth']['claims']: {auth_claims}")
-        except Exception as e:
-            logger.debug(f"[MCP DEBUG] Could not access request.scope['auth']['claims']: {e}")
+        request = ctx.get_http_request()
+        if request and 'auth_claims' in request.scope:
+            auth_claims = request.scope['auth_claims']
+            auth_source = "request.scope['auth_claims']"
+            logger.info(f"[MCP DEBUG] Found auth_claims in request.scope: {auth_claims}")
+    except Exception as e:
+        logger.debug(f"[MCP DEBUG] Could not access request.scope['auth_claims']: {e}")
+   
     
     # 인증 정보 확인
     if auth_claims:
@@ -302,49 +260,16 @@ async def search_memory(ctx: Context, query: str, top_k: int = 5) -> dict[str, A
     # 인증 정보 가져오기
     auth_claims = None
     auth_source = None
-    
-    # 1. 기본 방법: ctx.auth_claims 사용
+ 
     try:
-        auth_claims = ctx.auth_claims
-        if auth_claims:
-            auth_source = "ctx.auth_claims"
-            logger.info(f"[MCP DEBUG] Successfully retrieved auth_claims via ctx.auth_claims: {auth_claims}")
-    except Exception as e_claims:
-        logger.debug(f"[MCP DEBUG] Could not access ctx.auth_claims: {e_claims}")
+        request = ctx.get_http_request()
+        if request and 'auth_claims' in request.scope:
+            auth_claims = request.scope['auth_claims']
+            auth_source = "request.scope['auth_claims']"
+            logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['auth_claims']: {auth_claims}")
+    except Exception as e_scope:
+        logger.debug(f"[MCP DEBUG] Could not access request.scope['auth_claims']: {e_scope}")
     
-    # 2. 대체 방법: request.scope['user'].access_token.claims 사용
-    if not auth_claims:
-        try:
-            request = ctx.get_http_request()
-            if request and 'user' in request.scope and hasattr(request.scope['user'], 'access_token') and hasattr(request.scope['user'].access_token, 'claims'):
-                auth_claims = request.scope['user'].access_token.claims
-                auth_source = "request.scope['user'].access_token.claims"
-                logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['user'].access_token.claims: {auth_claims}")
-        except Exception as e_req:
-            logger.debug(f"[MCP DEBUG] Could not access request.scope['user'].access_token.claims: {e_req}")
-    
-    # 3. 대체 방법: request.scope['auth_claims'] 사용
-    if not auth_claims:
-        try:
-            request = ctx.get_http_request()
-            if request and 'auth_claims' in request.scope:
-                auth_claims = request.scope['auth_claims']
-                auth_source = "request.scope['auth_claims']"
-                logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['auth_claims']: {auth_claims}")
-        except Exception as e_scope:
-            logger.debug(f"[MCP DEBUG] Could not access request.scope['auth_claims']: {e_scope}")
-    
-    # 5. 대체 방법: scope['auth']['claims'] 사용
-    if not auth_claims:
-        try:
-            request = ctx.get_http_request()
-            if request and 'auth' in request.scope and 'claims' in request.scope['auth']:
-                auth_claims = request.scope['auth']['claims']
-                auth_source = "request.scope['auth']['claims']"
-                logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['auth']['claims']: {auth_claims}")
-        except Exception as e:
-            logger.debug(f"[MCP DEBUG] Could not access request.scope['auth']['claims']: {e}")
-
     if auth_claims:
         user_id_token = auth_claims.get("sub")
         client_name_token = auth_claims.get("client_name", "mcp_inspector_client")
@@ -463,57 +388,14 @@ async def list_memories(ctx: Context, page: int = 1, page_size: int = 10) -> dic
     auth_claims = None
     auth_source = None
     
-    # 1. 기본 방법: ctx.auth_claims 사용
     try:
-        auth_claims = ctx.auth_claims
-        if auth_claims:
-            auth_source = "ctx.auth_claims"
-            logger.info(f"[MCP DEBUG] Successfully retrieved auth_claims via ctx.auth_claims: {auth_claims}")
-    except Exception as e_claims:
-        logger.debug(f"[MCP DEBUG] Could not access ctx.auth_claims: {e_claims}")
-    
-    # 2. 대체 방법: request.scope['user'].access_token.claims 사용
-    if not auth_claims:
-        try:
-            request = ctx.get_http_request()
-            if request and 'user' in request.scope and hasattr(request.scope['user'], 'access_token') and hasattr(request.scope['user'].access_token, 'claims'):
-                auth_claims = request.scope['user'].access_token.claims
-                auth_source = "request.scope['user'].access_token.claims"
-                logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['user'].access_token.claims: {auth_claims}")
-        except Exception as e_req:
-            logger.debug(f"[MCP DEBUG] Could not access request.scope['user'].access_token.claims: {e_req}")
-    
-    # 3. 대체 방법: request.scope['auth_claims'] 사용
-    if not auth_claims:
-        try:
-            request = ctx.get_http_request()
-            if request and 'auth_claims' in request.scope:
-                auth_claims = request.scope['auth_claims']
-                auth_source = "request.scope['auth_claims']"
-                logger.info(f"[MCP DEBUG] Found auth_claims in request.scope: {auth_claims}")
-        except Exception as e_scope:
-            logger.debug(f"[MCP DEBUG] Could not access request.scope['auth_claims']: {e_scope}")
-    
-    # # 4. 대체 방법: ctx.auth.claims 사용
-    if not auth_claims:
-        try:
-            if hasattr(ctx, 'auth') and hasattr(ctx.auth, 'claims'):
-                auth_claims = ctx.auth.claims
-                auth_source = "ctx.auth.claims"
-                logger.info(f"[MCP DEBUG] Found auth_claims via ctx.auth.claims: {auth_claims}")
-        except Exception as e:
-            logger.debug(f"[MCP DEBUG] Could not access ctx.auth.claims: {e}")
-    
-    # 5. 대체 방법: scope['auth']['claims'] 사용
-    if not auth_claims:
-        try:
-            request = ctx.get_http_request()
-            if request and 'auth' in request.scope and 'claims' in request.scope['auth']:
-                auth_claims = request.scope['auth']['claims']
-                auth_source = "request.scope['auth']['claims']"
-                logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['auth']['claims']: {auth_claims}")
-        except Exception as e:
-            logger.debug(f"[MCP DEBUG] Could not access request.scope['auth']['claims']: {e}")
+        request = ctx.get_http_request()
+        if request and 'auth_claims' in request.scope:
+            auth_claims = request.scope['auth_claims']
+            auth_source = "request.scope['auth_claims']"
+            logger.info(f"[MCP DEBUG] Found auth_claims in request.scope: {auth_claims}")
+    except Exception as e_scope:
+        logger.debug(f"[MCP DEBUG] Could not access request.scope['auth_claims']: {e_scope}")
 
     # 인증 정보 확인
     if auth_claims:
@@ -643,58 +525,15 @@ async def delete_all_memories(ctx: Context) -> dict[str, Any]:
         # 인증 정보 가져오기
         auth_claims = None
         auth_source = None
-        
-        # 1. 기본 방법: ctx.auth_claims 사용
+
         try:
-            auth_claims = ctx.auth_claims
-            if auth_claims:
-                auth_source = "ctx.auth_claims"
-                logger.info(f"[MCP DEBUG] Successfully retrieved auth_claims via ctx.auth_claims: {auth_claims}")
-        except Exception as e_claims:
-            logger.debug(f"[MCP DEBUG] Could not access ctx.auth_claims: {e_claims}")
-        
-        # 2. 대체 방법: request.scope['user'].access_token.claims 사용
-        if not auth_claims:
-            try:
-                request = ctx.get_http_request()
-                if request and 'user' in request.scope and hasattr(request.scope['user'], 'access_token') and hasattr(request.scope['user'].access_token, 'claims'):
-                    auth_claims = request.scope['user'].access_token.claims
-                    auth_source = "request.scope['user'].access_token.claims"
-                    logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['user'].access_token.claims: {auth_claims}")
-            except Exception as e_req:
-                logger.debug(f"[MCP DEBUG] Could not access request.scope['user'].access_token.claims: {e_req}")
-        
-        # 3. 대체 방법: request.scope['auth_claims'] 사용
-        if not auth_claims:
-            try:
-                request = ctx.get_http_request()
-                if request and 'auth_claims' in request.scope:
-                    auth_claims = request.scope['auth_claims']
-                    auth_source = "request.scope['auth_claims']"
-                    logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['auth_claims']: {auth_claims}")
-            except Exception as e_scope:
-                logger.debug(f"[MCP DEBUG] Could not access request.scope['auth_claims']: {e_scope}")
-        
-        # 4. 대체 방법: ctx.auth.claims 사용
-        if not auth_claims:
-            try:
-                if hasattr(ctx, 'auth') and hasattr(ctx.auth, 'claims'):
-                    auth_claims = ctx.auth.claims
-                    auth_source = "ctx.auth.claims"
-                    logger.info(f"[MCP DEBUG] Found auth_claims via ctx.auth.claims: {auth_claims}")
-            except Exception as e:
-                logger.debug(f"[MCP DEBUG] Could not access ctx.auth.claims: {e}")
-        
-        # 5. 대체 방법: scope['auth']['claims'] 사용
-        if not auth_claims:
-            try:
-                request = ctx.get_http_request()
-                if request and 'auth' in request.scope and 'claims' in request.scope['auth']:
-                    auth_claims = request.scope['auth']['claims']
-                    auth_source = "request.scope['auth']['claims']"
-                    logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['auth']['claims']: {auth_claims}")
-            except Exception as e:
-                logger.debug(f"[MCP DEBUG] Could not access request.scope['auth']['claims']: {e}")
+            request = ctx.get_http_request()
+            if request and 'auth_claims' in request.scope:
+                auth_claims = request.scope['auth_claims']
+                auth_source = "request.scope['auth_claims']"
+                logger.info(f"[MCP DEBUG] Found auth_claims via request.scope['auth_claims']: {auth_claims}")
+        except Exception as e_scope:
+            logger.debug(f"[MCP DEBUG] Could not access request.scope['auth_claims']: {e_scope}")
 
         # 인증 정보 확인
         if auth_claims:
