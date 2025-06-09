@@ -31,43 +31,6 @@ app.mount("/mcp/", http_app_from_mcp)
 # Removed mcp_passthrough and mcp_slash_redirect as they conflict with the mount
 # and are no longer needed with the simplified mounting strategy.
 
-'''
-# ScopeDebugMiddleware definition
-scope_logger = logging.getLogger("scope_debug_middleware")
-scope_logger.setLevel(logging.DEBUG)
-# Ensure a handler is present if not configured globally by uvicorn already
-if not scope_logger.handlers:
-    scope_stream_handler = logging.StreamHandler()
-    # More detailed format for scope logger, including timestamp
-    scope_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    scope_stream_handler.setFormatter(scope_formatter)
-    scope_logger.addHandler(scope_stream_handler)
-
-class ScopeDebugMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: StarletteRequest, call_next):
-        #scope_logger.info(f"SCOPE_DEBUG_MIDDLEWARE_ENTER: Path {request.url.path}") # New log
-        
-        #scope_logger.debug(f"Path: {request.url.path} - Scope dictionary content:")
-        for key, value in request.scope.items():
-            if key == "headers":
-                decoded_headers = {k.decode('utf-8', 'ignore'): v.decode('utf-8', 'ignore') for k, v in value}
-                #scope_logger.debug(f"Path: {request.url.path} -   {key}: {decoded_headers}")
-            #elif key == "query_string" and isinstance(value, bytes):
-                #scope_logger.debug(f"Path: {request.url.path} -   {key}: {value.decode('utf-8', 'ignore')}")
-            #else:
-                #scope_logger.debug(f"Path: {request.url.path} -   {key}: {value}")
-        
-        #if "auth_claims" in request.scope:
-            #scope_logger.info(f"Path: {request.url.path} -   !!! auth_claims FOUND in scope: {request.scope['auth_claims']}")
-        #else:
-            #scope_logger.warning(f"Path: {request.url.path} -   !!! auth_claims NOT FOUND in scope.")
-        
-        response = await call_next(request)
-        #scope_logger.info(f"SCOPE_DEBUG_MIDDLEWARE_EXIT: Path {request.url.path}") # New log
-        return response
-'''            
-
-
 # Define ISSUER URL for AuthMiddleware
 ISSUER = "https://openmemory.io/auth"
 
@@ -81,8 +44,6 @@ app.add_middleware(
     excluded_paths=EXCLUDED_PATHS
 )
 
-# Add ScopeDebugMiddleware *after* AuthMiddleware so it can log 'auth_claims'
-#app.add_middleware(ScopeDebugMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -147,6 +108,8 @@ def create_default_app():
 create_default_user()
 create_default_app()
 
+# Setup MCP server
+#setup_mcp_server(app)
 
 # Include routers
 app.include_router(memories_router)
@@ -156,33 +119,3 @@ app.include_router(config_router)
 
 # Add pagination support
 add_pagination(app)
-
-
-
-# --- Logging registered routes on main app ---
-import logging as main_logging # Use alias to avoid conflict if 'logging' is used differently above
-main_logger = main_logging.getLogger("main_app_routes")
-main_logger.setLevel(main_logging.INFO)
-
-# Ensure a handler is present if not configured globally by uvicorn already
-if not main_logger.handlers:
-    stream_handler = main_logging.StreamHandler()
-    formatter = main_logging.Formatter('%(levelname)s:     %(name)s - %(message)s')
-    stream_handler.setFormatter(formatter)
-    main_logger.addHandler(stream_handler)
-
-main_logger.info("--- Registered routes on main FastAPI app ---")
-for route_item in app.routes:
-    path_info = getattr(route_item, "path", "N/A")
-    name_info = getattr(route_item, "name", "N/A")
-    methods_info = getattr(route_item, "methods", "N/A") # Relevant for APIRoute
-    # For mounted applications, the route itself is the app
-    if hasattr(route_item, "app") and not isinstance(route_item, APIRouter):
-        # This could be a Mount instance
-        main_logger.info(f"App route (Mount): Path='{path_info}', Name='{name_info}', App='{type(getattr(route_item, 'app', None)).__name__}'")
-    elif hasattr(route_item, "endpoint") : # Standard APIRoute
-         main_logger.info(f"App route (APIRoute): Path='{path_info}', Name='{name_info}', Methods={methods_info}, Endpoint='{getattr(route_item, 'endpoint', None).__name__}'")
-    else:
-        main_logger.info(f"App route (Other): Type='{type(route_item).__name__}', Path='{path_info}', Name='{name_info}'")
-main_logger.info("--- End of registered routes on main FastAPI app ---")
-# --- End of logging ---
