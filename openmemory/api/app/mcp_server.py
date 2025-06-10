@@ -756,28 +756,3 @@ async def mcp_streamable_http(request: Request):
         return Response(content=json.dumps({"error": "Internal Server Error", "detail": str(outer_e)}), 
                         status_code=500, 
                         media_type="application/json")
-
-async def handle_post_message(request: Request):
-    """Handle POST messages for SSE"""
-    try:
-        body = await request.body()
-
-        # Create a simple receive function that returns the body
-        async def receive():
-            return {"type": "http.request", "body": body, "more_body": False}
-
-        # Create a simple send function that does nothing
-        async def send(message):
-            return {}
-
-        # Call handle_post_message with the correct arguments
-        await sse.handle_post_message(request.scope, receive, send)
-
-        # Return a success response
-        return {"status": "ok"}
-    finally:
-        pass
-        # Clean up context variable
-        # client_name_var.reset(client_token)
-
-# setup_mcp_server는 더 이상 필요하지 않으므로 제거합니다.

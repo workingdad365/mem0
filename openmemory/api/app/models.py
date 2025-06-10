@@ -38,21 +38,21 @@ class User(Base):
 
     apps = relationship("App", back_populates="owner")
     memories = relationship("Memory", back_populates="user")
-    tokens = relationship("UserToken", back_populates="user")
+    #tokens = relationship("UserToken", back_populates="user")
 
 
-class UserToken(Base):
-    __tablename__ = "user_tokens"
-    id = Column(UUID, primary_key=True, default=lambda: uuid.uuid4())
-    user_id = Column(UUID, ForeignKey("users.id"), nullable=False, index=True)
-    token = Column(String, unique=True, nullable=False, index=True)
-    description = Column(String, nullable=True)
-    is_active = Column(Boolean, default=True, index=True)
-    expires_at = Column(DateTime, nullable=True, index=True)
-    created_at = Column(DateTime, default=get_current_utc_time, index=True)
-    last_used_at = Column(DateTime, nullable=True)
+# class UserToken(Base):
+#     __tablename__ = "user_tokens"
+#     id = Column(UUID, primary_key=True, default=lambda: uuid.uuid4())
+#     user_id = Column(UUID, ForeignKey("users.id"), nullable=False, index=True)
+#     token = Column(String, unique=True, nullable=False, index=True)
+#     description = Column(String, nullable=True)
+#     is_active = Column(Boolean, default=True, index=True)
+#     expires_at = Column(DateTime, nullable=True, index=True)
+#     created_at = Column(DateTime, default=get_current_utc_time, index=True)
+#     last_used_at = Column(DateTime, nullable=True)
 
-    user = relationship("User", back_populates="tokens")
+#     user = relationship("User", back_populates="tokens")
 
 
 class App(Base):

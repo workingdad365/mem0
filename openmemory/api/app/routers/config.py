@@ -53,27 +53,33 @@ def get_default_configuration():
                 "config": {
                     "model": "gpt-4.1-nano",
                     "temperature": 0.1,
-                    "max_tokens": 2000,
-                    "api_key": "env:OPENAI_API_KEY",
-                    "azure_kwargs": {
-                        "azure_deployment": "gpt-4.1-nano",
-                        "api_version": "2024-10-21",
-                        "azure_endpoint": "https://oai-drasys.openai.azure.com",
-                        "api_key": "env:LLM_AZURE_OPENAI_API_KEY"
-                    }
+                    "max_tokens": 3990,
+                    "azure_deployment": "gpt-4.1-nano",
+                    "api_version": "2024-10-21",
+                    "azure_endpoint": "https://oai-drasys.openai.azure.com",
+                    "api_key": "env:AZURE_OPENAI_API_KEY"                    
+                    # "azure_kwargs": {
+                    #     "azure_deployment": "gpt-4.1-nano",
+                    #     "api_version": "2024-10-21",
+                    #     "azure_endpoint": "https://oai-drasys.openai.azure.com",
+                    #     "api_key": "env:AZURE_OPENAI_API_KEY"
+                    # }
                 }
             },
             "embedder": {
                 "provider": "azure_openai",
                 "config": {
                     "model": "text-embedding-3-small",
-                    "api_key": "env:OPENAI_API_KEY",
-                    "azure_kwargs": {
-                        "azure_deployment": "text-embedding-3-small",
-                        "api_version": "2024-10-21",
-                        "azure_endpoint": "https://oai-drasys.openai.azure.com",
-                        "api_key": "env:LLM_AZURE_OPENAI_API_KEY"
-                    }
+                    "azure_deployment": "text-embedding-3-small",
+                    "api_version": "2024-10-21",
+                    "azure_endpoint": "https://oai-drasys.openai.azure.com",
+                    "api_key": "env:AZURE_OPENAI_API_KEY"                    
+                    # "azure_kwargs": {
+                    #     "azure_deployment": "text-embedding-3-small",
+                    #     "api_version": "2024-10-21",
+                    #     "azure_endpoint": "https://oai-drasys.openai.azure.com",
+                    #     "api_key": "env:AZURE_OPENAI_API_KEY"
+                    # }
                 }
             }
         }

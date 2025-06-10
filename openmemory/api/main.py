@@ -35,14 +35,14 @@ app.mount("/mcp/", http_app_from_mcp)
 ISSUER = "https://openmemory.io/auth"
 
 # Add AuthMiddleware first to handle JWT and set auth_claims
-EXCLUDED_PATHS = ["/openapi.json", "/docs", "/redoc"]
-app.add_middleware(
-    AuthMiddleware,
-    issuer_url=ISSUER,
-    audience="openmemory-mcp-server",  # Use literal string for audience
-    public_key_path="public_key.pem", # Path relative to main.py
-    excluded_paths=EXCLUDED_PATHS
-)
+# EXCLUDED_PATHS = ["/openapi.json", "/docs", "/redoc"]
+# app.add_middleware(
+#     AuthMiddleware,
+#     issuer_url=ISSUER,
+#     audience="openmemory-mcp-server",  # Use literal string for audience
+#     public_key_path="public_key.pem", # Path relative to main.py
+#     excluded_paths=EXCLUDED_PATHS
+# )
 
 
 app.add_middleware(
