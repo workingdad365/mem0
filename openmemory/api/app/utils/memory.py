@@ -136,61 +136,65 @@ def reset_memory_client():
 
 def get_default_memory_config():
     """Get default memory client configuration with sensible defaults."""
-    return {
+
+    neo4j_password = os.getenv("NEO4J_PASSWORD")
+
+    if neo4j_password == "Qkfrkdneo4@2":
+        return {
         "vector_store": {
             "provider": "qdrant",
             "config": {
                 "collection_name": "openmemory",
-                "host": "localhost",
+                "host": "mem0_store",
                 "port": 6333,
             }
         },
-        "llm": {
-            "provider": "azure_openai",
-            "config": {
-                "model": "gpt-4.1-nano",
-                "temperature": 0.1,
-                "max_tokens": 3990,
-                "azure_kwargs": {
-                    "azure_deployment": "gpt-4.1-nano",
-                    "api_version": "2024-10-21",
-                    "azure_endpoint": "https://oai-drasys.openai.azure.com",
-                    "api_key": "env:AZURE_OPENAI_API_KEY"
-                }
-            }
-        },
-        "embedder": {
-            "provider": "azure_openai",
-            "config": {
-                "model": "text-embedding-3-small",
-                "azure_kwargs": {
-                    "azure_deployment": "text-embedding-3-small",
-                    "api_version": "2024-10-21",
-                    "azure_endpoint": "https://oai-drasys.openai.azure.com",
-                    "api_key": "env:AZURE_OPENAI_API_KEY"
-                }
-            }
-        },        
         # "llm": {
-        #     "provider": "openai",
+        #     "provider": "azure_openai",
         #     "config": {
-        #         "model": "gpt-4o-mini",
+        #         "model": "gpt-4.1-nano",
         #         "temperature": 0.1,
-        #         "max_tokens": 2000,
-        #         "api_key": "env:OPENAI_API_KEY"
+        #         "max_tokens": 3990,
+        #         "azure_kwargs": {
+        #             "azure_deployment": "gpt-4.1-nano",
+        #             "api_version": "2024-10-21",
+        #             "azure_endpoint": "https://oai-drasys.openai.azure.com",
+        #             "api_key": "env:AZURE_OPENAI_API_KEY"
+        #         }
         #     }
         # },
         # "embedder": {
-        #     "provider": "openai",
+        #     "provider": "azure_openai",
         #     "config": {
         #         "model": "text-embedding-3-small",
-        #         "api_key": "env:OPENAI_API_KEY"
+        #         "azure_kwargs": {
+        #             "azure_deployment": "text-embedding-3-small",
+        #             "api_version": "2024-10-21",
+        #             "azure_endpoint": "https://oai-drasys.openai.azure.com",
+        #             "api_key": "env:AZURE_OPENAI_API_KEY"
+        #         }
         #     }
-        # },
+        # },        
+        "llm": {
+            "provider": "openai",
+            "config": {
+                "model": "gpt-4o-mini",
+                "temperature": 0.1,
+                "max_tokens": 2000,
+                "api_key": "env:OPENAI_API_KEY"
+            }
+        },
+        "embedder": {
+            "provider": "openai",
+            "config": {
+                "model": "text-embedding-3-small",
+                "api_key": "env:OPENAI_API_KEY"
+            }
+        },
         "graph_store": {
             "provider": "neo4j",
             "config": {
-                "url": "neo4j://localhost:7687",
+                "url": "neo4j://neo4j:7687",
                 "username": "neo4j",
                 "password": "env:NEO4J_PASSWORD"
             }

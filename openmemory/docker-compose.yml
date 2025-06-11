@@ -5,12 +5,27 @@ services:
       - "6333:6333"
     volumes:
       - mem0_storage:/mem0/storage
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    ports:
+      - "7474:7474"   # 웹 인터페이스
+      - "7687:7687"   # Bolt 프로토콜
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+    environment:
+      - NEO4J_AUTH=neo4j/Qkfrkdneo4@2
+    
   openmemory-mcp:
     image: mem0/openmemory-mcp
     build: api/
     environment:
       - USER
       - API_KEY
+      - MEM0_TELEMETRY=False
+      - NEO4J_PASSWORD
     env_file:
       - api/.env
     depends_on:
@@ -20,7 +35,7 @@ services:
     volumes:
       - ./api:/usr/src/openmemory
     command: >
-      sh -c "uvicorn main:app --host 0.0.0.0 --port 8765 --reload --workers 4"
+      sh -c "uvicorn main:app --host 0.0.0.0 --port 8765 --workers 1"
   openmemory-ui:
     build:
       context: ui/
@@ -34,3 +49,6 @@ services:
 
 volumes:
   mem0_storage:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
