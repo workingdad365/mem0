@@ -139,7 +139,7 @@ def get_default_memory_config():
 
     neo4j_password = os.getenv("NEO4J_PASSWORD")
 
-    if neo4j_password == "Qkfrkdneo4@2":
+    if neo4j_password == "ktopenmemorypoc2025@1":
         return {
         "vector_store": {
             "provider": "qdrant",
