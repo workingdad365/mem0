@@ -51,12 +51,12 @@ def get_default_configuration():
             "llm": {
                 "provider": "azure_openai",
                 "config": {
-                    "model": "gpt-4.1-nano",
-                    "temperature": 0.1,
-                    "max_tokens": 3990,
-                    "azure_deployment": "gpt-4.1-nano",
+                    "model": "gpt-4.1-mini",
+                    "temperature": 0.0,
+                    "max_tokens": 4000,
+                    "azure_deployment": "gpt-4.1-mini",
                     "api_version": "2024-10-21",
-                    "azure_endpoint": "https://oai-drasys.openai.azure.com",
+                    "azure_endpoint": "https://oai-openmemory.openai.azure.com",
                     "api_key": "env:AZURE_OPENAI_API_KEY"                    
                     # "azure_kwargs": {
                     #     "azure_deployment": "gpt-4.1-nano",
@@ -72,7 +72,7 @@ def get_default_configuration():
                     "model": "text-embedding-3-small",
                     "azure_deployment": "text-embedding-3-small",
                     "api_version": "2024-10-21",
-                    "azure_endpoint": "https://oai-drasys.openai.azure.com",
+                    "azure_endpoint": "https://oai-openmemory.openai.azure.com",
                     "api_key": "env:AZURE_OPENAI_API_KEY"                    
                     # "azure_kwargs": {
                     #     "azure_deployment": "text-embedding-3-small",
