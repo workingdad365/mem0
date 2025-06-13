@@ -16,7 +16,7 @@ services:
       - neo4j_logs:/logs
       - neo4j_import:/var/lib/neo4j/import
     environment:
-      - NEO4J_AUTH=neo4j/ktopenmemorypoc2025@1
+      - NEO4J_AUTH=${NEO4J_AUTH}
     
   openmemory-mcp:
     image: mem0/openmemory-mcp
@@ -25,7 +25,12 @@ services:
       - USER
       - API_KEY
       - MEM0_TELEMETRY=False
-      - NEO4J_PASSWORD
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      - AZURE_QDRANT_HOST=${AZURE_QDRANT_HOST}
+      - AZURE_QDRANT_PORT=${AZURE_QDRANT_PORT}
+      - AZURE_ENDPOINT=${AZURE_ENDPOINT}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_NEO4J_URL=${AZURE_NEO4J_URL}
     env_file:
       - api/.env
     depends_on:
