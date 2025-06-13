@@ -195,6 +195,23 @@ def get_default_memory_config():
             "password": "env:NEO4J_PASSWORD"
         }
     },
+    # "vector_store": {
+    #     "provider": "qdrant",
+    #     "config": {
+    #         "collection_name": "openmemory",
+    #         "host": "mem0_store",
+    #         "port": 6333,
+    #     }
+    # },
+    # "graph_store": {
+    #         "provider": "neo4j",
+    #         "config": {
+    #             "url": "neo4j://neo4j:7687",
+    #             "username": "neo4j",
+    #             "password": "env:NEO4J_PASSWORD"
+    #     }
+    # },
+
     "version": "v1.1"
 }
 
