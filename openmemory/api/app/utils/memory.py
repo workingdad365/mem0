@@ -141,8 +141,8 @@ def get_default_memory_config():
         "provider": "qdrant",
         "config": {
             "collection_name": "openmemory",
-            "host": "env:QDRANT_HOST",
-            "port": "env:QDRANT_PORT",
+            "host": "env:AZURE_QDRANT_HOST",
+            "port": "env:AZURE_QDRANT_PORT",
         }
     },
     "llm": {
@@ -154,7 +154,7 @@ def get_default_memory_config():
             "azure_kwargs": {
                 "azure_deployment": "gpt-4.1-mini",
                 "api_version": "2024-10-21",
-                "azure_endpoint": "https://oai-openmemory.openai.azure.com",
+                "azure_endpoint": "env:AZURE_ENDPOINT",
                 "api_key": "env:AZURE_OPENAI_API_KEY"
             }
         }
@@ -166,7 +166,7 @@ def get_default_memory_config():
             "azure_kwargs": {
                 "azure_deployment": "text-embedding-3-small",
                 "api_version": "2024-10-21",
-                "azure_endpoint": "https://oai-openmemory.openai.azure.com",
+                "azure_endpoint": "env:AZURE_ENDPOINT",
                 "api_key": "env:AZURE_OPENAI_API_KEY"
             }
         }
@@ -190,7 +190,7 @@ def get_default_memory_config():
     "graph_store": {
         "provider": "neo4j",
         "config": {
-            "url": "bolt://neo4j.grayisland-613041d4.koreacentral.azurecontainerapps.io:7687",
+            "url": "env:AZURE_NEO4J_URL",
             "username": "neo4j",
             "password": "env:NEO4J_PASSWORD"
         }
