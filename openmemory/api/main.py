@@ -13,6 +13,11 @@ from app.models import User, App
 from uuid import uuid4
 from app.config import USER_ID, DEFAULT_APP_ID
 from app.auth_middleware import AuthMiddleware # Added for JWT authentication
+from app.utils.logging_util import get_logger, setup_root_logger
+
+# 로거 설정
+logger = get_logger(__name__)
+setup_root_logger()  # 루트 로거도 함께 설정
 
 # FastMCP 앱 생성 시 서비스 경로를 '/' (루트)로 지정
 # 이렇게 하면 FastMCP 앱은 마운트된 위치의 루트에서 요청을 처리함
@@ -21,12 +26,13 @@ http_app_from_mcp = mcp.http_app(path="/")
 app = FastAPI(title="OpenMemory API", lifespan=http_app_from_mcp.lifespan)
 
 # FastMCP 앱 내부 라우트 목록을 직접 출력 (디버깅용)
-print("--- FastMCP App Internal Routes (raw list) ---")
-print(http_app_from_mcp.routes)
-print("--- End of FastMCP App Internal Routes (raw list) ---")
+logger.debug("--- FastMCP App Internal Routes (raw list) ---")
+logger.debug(http_app_from_mcp.routes)
+logger.debug("--- End of FastMCP App Internal Routes (raw list) ---")
 
 # FastAPI의 /mcp/ 경로 (후행 슬래시 포함)에 FastMCP 앱을 마운트
 app.mount("/mcp/", http_app_from_mcp)
+logger.info("FastMCP app mounted at /mcp/ path")
 
 # Removed mcp_passthrough and mcp_slash_redirect as they conflict with the mount
 # and are no longer needed with the simplified mounting strategy.
