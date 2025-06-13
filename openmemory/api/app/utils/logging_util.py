@@ -41,6 +41,7 @@ def get_logger(name=None, level=logging.INFO):
     # 로거 생성
     logger = logging.getLogger(name)
     logger.setLevel(level)
+    logger.propagate = False  # 루트 로거로 메시지 전파 방지
     
     # 이미 핸들러가 설정되어 있으면 추가 설정하지 않음
     if logger.handlers:
