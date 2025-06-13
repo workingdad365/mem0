@@ -136,71 +136,67 @@ def reset_memory_client():
 
 def get_default_memory_config():
     """Get default memory client configuration with sensible defaults."""
-
-    neo4j_password = os.getenv("NEO4J_PASSWORD")
-
-    if neo4j_password == "ktopenmemorypoc2025@1":
-        return {
-        "vector_store": {
-            "provider": "qdrant",
-            "config": {
-                "collection_name": "openmemory",
-                "host": "mem0_store",
-                "port": 6333,
+    return {
+    "vector_store": {
+        "provider": "qdrant",
+        "config": {
+            "collection_name": "openmemory",
+            "host": "env:QDRANT_HOST",
+            "port": "env:QDRANT_PORT",
+        }
+    },
+    "llm": {
+        "provider": "azure_openai",
+        "config": {
+            "model": "gpt-4.1-mini",
+            "temperature": 0.0,
+            "max_tokens": 5000,
+            "azure_kwargs": {
+                "azure_deployment": "gpt-4.1-mini",
+                "api_version": "2024-10-21",
+                "azure_endpoint": "https://oai-openmemory.openai.azure.com",
+                "api_key": "env:AZURE_OPENAI_API_KEY"
             }
-        },
-        # "llm": {
-        #     "provider": "azure_openai",
-        #     "config": {
-        #         "model": "gpt-4.1-nano",
-        #         "temperature": 0.1,
-        #         "max_tokens": 3990,
-        #         "azure_kwargs": {
-        #             "azure_deployment": "gpt-4.1-nano",
-        #             "api_version": "2024-10-21",
-        #             "azure_endpoint": "https://oai-drasys.openai.azure.com",
-        #             "api_key": "env:AZURE_OPENAI_API_KEY"
-        #         }
-        #     }
-        # },
-        # "embedder": {
-        #     "provider": "azure_openai",
-        #     "config": {
-        #         "model": "text-embedding-3-small",
-        #         "azure_kwargs": {
-        #             "azure_deployment": "text-embedding-3-small",
-        #             "api_version": "2024-10-21",
-        #             "azure_endpoint": "https://oai-drasys.openai.azure.com",
-        #             "api_key": "env:AZURE_OPENAI_API_KEY"
-        #         }
-        #     }
-        # },        
-        "llm": {
-            "provider": "openai",
-            "config": {
-                "model": "gpt-4o-mini",
-                "temperature": 0.1,
-                "max_tokens": 2000,
-                "api_key": "env:OPENAI_API_KEY"
+        }
+    },
+    "embedder": {
+        "provider": "azure_openai",
+        "config": {
+            "model": "text-embedding-3-small",
+            "azure_kwargs": {
+                "azure_deployment": "text-embedding-3-small",
+                "api_version": "2024-10-21",
+                "azure_endpoint": "https://oai-openmemory.openai.azure.com",
+                "api_key": "env:AZURE_OPENAI_API_KEY"
             }
-        },
-        "embedder": {
-            "provider": "openai",
-            "config": {
-                "model": "text-embedding-3-small",
-                "api_key": "env:OPENAI_API_KEY"
-            }
-        },
-        "graph_store": {
-            "provider": "neo4j",
-            "config": {
-                "url": "neo4j://neo4j:7687",
-                "username": "neo4j",
-                "password": "env:NEO4J_PASSWORD"
-            }
-        },
-        "version": "v1.1"
-    }
+        }
+    },        
+    # "llm": {
+    #     "provider": "openai",
+    #     "config": {
+    #         "model": "gpt-4o-mini",
+    #         "temperature": 0.1,
+    #         "max_tokens": 2000,
+    #         "api_key": "env:OPENAI_API_KEY"
+    #     }
+    # },
+    # "embedder": {
+    #     "provider": "openai",
+    #     "config": {
+    #         "model": "text-embedding-3-small",
+    #         "api_key": "env:OPENAI_API_KEY"
+    #     }
+    # },
+    "graph_store": {
+        "provider": "neo4j",
+        "config": {
+            "url": "bolt://neo4j.grayisland-613041d4.koreacentral.azurecontainerapps.io:7687",
+            "username": "neo4j",
+            "password": "env:NEO4J_PASSWORD"
+        }
+    },
+    "version": "v1.1"
+}
 
 
 def _parse_environment_variables(config_dict):
@@ -217,6 +213,7 @@ def _parse_environment_variables(config_dict):
                 if env_value:
                     parsed_config[key] = env_value
                     print(f"Loaded {env_var} from environment for {key}")
+                    #print(f"Loaded value : {parsed_config[key]}")
                 else:
                     print(f"Warning: Environment variable {env_var} not found, keeping original value")
                     parsed_config[key] = value
